@@ -1,19 +1,34 @@
 <html>
+
 <head>
 <title>JavaLander</title>
 </head>
 
 <body>
 
-<p><font face="Lucida Sans" size="3">JavaLander Applet</font></p>
-<p><font size=1>Click in windows, then<br/>Turn: left and right arrows, Thrust: up arrow, Zoom: page up/down, Time Step: q/w.</font></p>
+<p>
+<font face="Lucida Sans" size="3">JavaLander</font>
+<font size=1>
+<br/> 
+<br/>
+Click in the applet window so that it gains the focus for keypresses. Then - <br/>
+<b>Left</b> and <b>Right</b> arrows to turn, <b>Up</b> arrow to thrust<br/>
+Just don't throttle too much or you'll be lost in space...<br/>
+</font></p>
 
-<applet code="JavaLander.class" archive="JavaLander.jar" style="left: 0px; top: 0px" width="640" height="240">
+<!-- add codebase="classes" if .jar or .class file is in a "classes" subfolder -->
+<applet archive="JavaLander.jar" code="JavaLander.class" width="640" height="240">
 <param name="xextent" value="640">
 <param name="yextent" value="240">
-<param name="foreground" value="ffffff">
-<param name="background" value="008080">
 </applet>
+
+<p>
+<font size=1>
+Note: The moon is currently kind of bouncy.<br/>
+Version: 0.2<br/>
+<a href="JavaLander.java">source</a>
+</font>
+</p>
 
 </body>
 </html>
