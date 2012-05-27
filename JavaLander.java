@@ -3,10 +3,11 @@
 // A moon lander applet
 // Note: all units are kg, meters, m/s, m/s/s, radians, newtons, etc.  
 //
-// Version: 0.2
-// Date: 2001-05-02
 // Author: Brian Burns
 // License: GPL
+// History:
+//   version 0.1  2001-05-02  no base, bounces on surface
+//   version 0.2  2012-05     adding base, realistic collisions
 //-----------------------------------------------------------------------------
 //
 // Table of contents:
@@ -16,6 +17,7 @@
 //   Ship
 //   Flame
 //   Land
+//   Base
 //   Stars
 //   Clouds
 //
@@ -35,7 +37,7 @@ import java.awt.event.*;
 import java.lang.Math;
 import java.util.Vector;
 //import java.util.Enumeration;
-
+import java.util.Iterator;
 
 //-----------------------------------------------------------------------------
 // JavaLander
@@ -51,7 +53,9 @@ public class JavaLander
   float timeStep = 0.1f; // [seconds]
   
   // delay during each timestep - keeps things from going too fast and flickering
+  //.. better to use a timer?
   int delay = 100; // [milliseconds] 
+//  int delay = 200; // [milliseconds] 
   
   World world = new World();
   
@@ -116,6 +120,7 @@ public class JavaLander
   // Run thread
   // This gets called by the applet framework when you get to do something. 
   // In this case, advance all objects by one timestep and redraw. 
+  //... remove collision code from draw, call it separately
   public void run() {
     while (true) {
       
@@ -153,6 +158,7 @@ public class JavaLander
 // Also contains a view which it uses in rendering itself and its sprites.
 //-----------------------------------------------------------------------------
 
+
 class World {
   
   // Attributes: 
@@ -169,6 +175,7 @@ class World {
   Ship ship = new Ship();
   Land land = new Land();
   Moon moon = new Moon();
+  Base base = new Base();
   // Stars stars = new Stars();
   // Clouds clouds = new Clouds();
 
@@ -192,6 +199,7 @@ class World {
     ship.init(this);
     land.init(this);
     moon.init(this);
+    base.init(this);
     // stars.init(this);
     // clouds.init(this);
     
@@ -212,22 +220,49 @@ class World {
   }
   
   // Draw the world and all the sprites it contains
+  //... move collision to another fn
   public void draw(Graphics g) {
     
     // Draw sprites
     moon.draw(g, viewMain);
     land.draw(g, viewMain);
+    base.draw(g, viewMain);
     ship.draw(g, viewMain);
     // stars.draw(g, viewMain);
     // clouds.draw(g, viewMain);
 
     // Draw stats and border
-    ship.drawStats(g);
     viewMain.drawBorder(g);
+//    ship.drawStats(g);
 
-    // Check for collisions between the ship and land.
+    // Check for collisions
     // Must do after drawing.
-    if (ship.checkCollision(land, pointIntersect, g)) {
+    
+    // Check for ship-base collision = bad or good depending on speed
+    if (ship.checkCollision(base, pointIntersect, g)) {
+      
+      // Draw a spark at the point of intersection (a small green circle)
+      int w = 5;
+      g.setColor(Color.green);
+      g.drawOval(pointIntersect.x - w, pointIntersect.y - w, w, w);
+      
+      // Ship should explode if above a certain velocity
+      if ((ship.vy*ship.vy + ship.vx*ship.vx) > 25) {
+        w = 40;
+        g.setColor(Color.orange);
+        g.drawOval(pointIntersect.x - w, pointIntersect.y - w, w, w);
+        System.out.println("explode ship");
+        ship.explode();
+      }
+      
+      // always stop the ship?
+      ship.vx = 0; 
+      ship.vy = 0; 
+      
+    }
+    
+    // Check for collisions between the ship and land.
+    else if (ship.checkCollision(land, pointIntersect, g)) {
       
       // Draw a spark at the point of intersection (a small red circle)
       int w = 5;
@@ -235,11 +270,11 @@ class World {
       g.drawOval(pointIntersect.x - w, pointIntersect.y - w, w, w);
 
       // Impart momentum to the ship
-      //, a certain amount of energy will go into deforming soil and ship
+      //. a certain amount of energy will go into deforming soil and ship
       // ship.angularVelocity += 0.2f;
       ship.vy = -15.0f; // bounce up!
       
-      //, Ship should explode if above a certain velocity
+      //. Ship should explode if above a certain velocity
       // ship.explode();
     }
   }
@@ -343,6 +378,7 @@ class View {
   }
     
   // Draw a border around view
+  //... this flickers, badly
   public void drawBorder(Graphics g) {
     g.drawRect(0, 0, widthPixels - 1, heightPixels - 1);
   }
@@ -467,26 +503,15 @@ class Ship
     // give them all rnd velocities (plus ships velocity).
     // on draw just draw these instead of the ship.
     // on step move these instead of ship.
+    // ie make a ShipRemains object with a bunch of subobjects with different velocities?
     // have them all stop at some depth under the horizon.
-/*
-    Sprite s = new Sprite();
-    s.init(world);
-    s.setPos(x, y);
-    s.setVelocity(vx, vy - 15.0f);
-    shapeModel.addPoint(0, -25); // 0
-    shapeModel.addPoint(-10, 10); // 1
-    shapeModel.addPoint(-7, 1); // 2
-    shapeModel.addPoint(-21, 15); // 3
-    shapeModel.addPoint(10, 10); // 4
-    shapeModel.addPoint(21, 15); // 5
-    shapeModel.addPoint(7, 1); // 6
-    shapeModel.addLineTo(0);
-    shapeModel.addLineTo(1);
-    shapeModel.addLineTo(2);
-    shapeModel.addLineTo(3);
-    shapeModel.addLineTo(1);
-    children.addElement(s);
-*/
+    
+    // call super with a parameter for velocities etc
+
+    // replace existing sprite with child sprites.
+    // ie remove all line segments from this sprite. right? 
+    
+    super.explode();    
   }  
 
   // Draw ship stats
@@ -655,6 +680,50 @@ class Land extends Sprite {
 
 
 //-----------------------------------------------------------------------------
+// Base
+// A sprite to represent the moonbase.
+//-----------------------------------------------------------------------------
+
+class Base extends Sprite {
+
+  public void init(World w) {
+    
+    world = w;
+    int width = (int) world.width;
+    int height = (int) world.height;
+    int hillHeight = height / 5; //. 20% of world height
+
+    int x = width  / 2;
+    int y = height - hillHeight;
+    int xw = width / 20;
+    int yw = height / 40;
+    
+    shapeModel.addPoint(x, y);
+    shapeModel.addPoint(x+xw, y);
+    shapeModel.addPoint(x+xw, y+yw);
+    shapeModel.addPoint(x, y+yw);
+    shapeModel.addLineTo(0);
+    shapeModel.addLineTo(1);
+    shapeModel.addLineTo(2);
+    shapeModel.addLineTo(3);
+    shapeModel.addLineTo(0);
+    
+    // Set scale
+    setScale(1.0f);
+  }
+
+  // Draw the base
+  public void draw(Graphics g, View view) {
+    shapeDraw = new ShapeX();
+    shapeDraw.copyFrom(shapeModel);
+    shapeDraw.transform(tModelToWorld);
+    shapeDraw.transform(view.tWorldToView);
+    shapeDraw.drawShape(g);    
+  }  
+}
+
+
+//-----------------------------------------------------------------------------
 // Moon
 // A simple circle that doesn't interact with other sprites
 //-----------------------------------------------------------------------------
@@ -700,8 +769,10 @@ class Clouds
 
 
 
+
+
 //-----------------------------------------------------------------------------
-// Sprite support stuff
+// Sprite support
 //. to be put in separate package
 //-----------------------------------------------------------------------------
 
@@ -782,9 +853,13 @@ class Sprite {
 //    Enumeration e = children.elements();
 //    while (e.hasMoreElements()) {
 //      Sprite s = (Sprite) e.nextElement();
-//      s.step(timeStep);
-//    }
-    
+//    for (Sprite s : children.elements()) {
+    Iterator i = children.iterator();
+    while (i.hasNext()) {
+      Sprite s = (Sprite) i.next();
+      s.step(timeStep);
+    }
+   
   }
   
   // Set the zoom scale and update the drawing polygon.
@@ -811,13 +886,38 @@ class Sprite {
   
   // Check for a collision between this sprite and the specified sprite
   public boolean checkCollision(Sprite s, Point2D pointIntersect, Graphics g) {
-    return shapeDraw.intersectsShape(s.shapeDraw, pointIntersect, g);
+//    return shapeDraw.intersectsShape(s.shapeDraw, pointIntersect, g);
+    if (shapeDraw.intersectsShape(s.shapeDraw, pointIntersect, g)) return true;
+    Iterator i = children.iterator();
+    while (i.hasNext()) {
+      Sprite sc = (Sprite) i.next();
+      if (sc.shapeDraw.intersectsShape(s.shapeDraw, pointIntersect, g)) return true;
+    }    
+    return false;
   }
 
   // Make the sprite explode!
   public void explode() {
     //, default behavior would scatter the linesegments that make up 
     // the sprite, add flames, etc.
+    // better to replace one sprite with several others. 
+    
+    Sprite s = new Sprite();
+    s.init(world);
+    s.setPos(x, y);
+    s.setVelocity(vx, vy - 15.0f);
+    s.shapeModel.addPoint(0, -25); // 0
+    s.shapeModel.addPoint(10, 10); // 1
+    s.shapeModel.addPoint(0,0); // 2
+    s.shapeModel.addLineTo(0);
+    s.shapeModel.addLineTo(1);
+    s.shapeModel.addLineTo(2);
+    s.shapeModel.addLineTo(0);
+    children.addElement(s);
+System.out.println("added child sprite");
+
+    // clear the old line segments
+    //shapeModel = new ShapeX();
   }
   
   // Draw the sprite on the screen using the given view transformation
@@ -834,12 +934,18 @@ class Sprite {
     shapeDraw.drawShape(g);
     
     // Now draw any child sprites
-    //! use new for syntax
+    //.. use new for syntax?
 //    Enumeration e = children.elements();
 //    while (e.hasMoreElements()) {
 //      Sprite s = (Sprite) e.nextElement();
-//      s.draw(g, view);
-//    }    
+//    for (Sprite s : children.elements()) {
+    Iterator i = children.iterator();
+    while (i.hasNext()) {
+      System.out.println("draw child sprite");
+      Sprite s = (Sprite) i.next();
+      s.draw(g, view);
+    }    
+    
   }  
 }
 
