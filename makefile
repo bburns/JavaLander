@@ -1,4 +1,5 @@
 
+# JavaLander build file
 
 run: JavaLander.jar
 	start index.htm
@@ -11,7 +12,6 @@ JavaLander.class: JavaLander.java
 
 clean:
 	rm -f *.class
-
 
 
 #~ classes\JavaLander.class: JavaLander.java

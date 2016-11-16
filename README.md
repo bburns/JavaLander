@@ -8,18 +8,13 @@ A lunar lander-type game prototype, written in Java.
 
 ## Running
 
-To run,
+To run, just open `index.htm`. 
 
-    > make
+But... since Java 7, security has tightened and applets no longer run without certificates. This is pretty involved, so I haven't attempted it yet: http://docs.oracle.com/javase/8/docs/technotes/guides/deploy/manifest.html.
 
-and open `index.html`. 
+...or you can add an exception to run it: https://www.java.com/en/download/faq/exception_sitelist.xml.
 
-
-## Java Security
-
-Since Java 7, security has tightened and applets no longer run without certificates. This is pretty involved, so I haven't attempted it yet: http://docs.oracle.com/javase/8/docs/technotes/guides/deploy/manifest.html
-
-In fact, it would be easier to just re-write it in JavaScript...
+But I think it would just be easier to re-write it in JavaScript...
 
 
 ## Building
