@@ -1,7 +1,7 @@
 
 
 run: JavaLander.jar
-	start view.htm
+	start index.htm
 
 JavaLander.jar: JavaLander.class Base.class Clouds.class Flame.class Land.class Moon.class Point2D.class Segment.class ShapeX.class Ship.class Sprite.class Stars.class Transform.class View.class World.class
 	jar cvf JavaLander.jar *.class

@@ -39,6 +39,7 @@ import java.util.Vector;
 //import java.util.Enumeration;
 import java.util.Iterator;
 
+
 //-----------------------------------------------------------------------------
 // JavaLander
 // The applet, with keyboard interface, etc.
@@ -52,10 +53,9 @@ public class JavaLander
 
   float timeStep = 0.1f; // [seconds]
   
-  // delay during each timestep - keeps things from going too fast and flickering
-  //.. better to use a timer?
+  // sleep delay during each timestep - 
+  // keeps things from going too fast and flickering (well)
   int delay = 100; // [milliseconds] 
-//  int delay = 200; // [milliseconds] 
   
   World world = new World();
   
@@ -120,7 +120,6 @@ public class JavaLander
   // Run thread
   // This gets called by the applet framework when you get to do something. 
   // In this case, advance all objects by one timestep and redraw. 
-  //... remove collision code from draw, call it separately
   public void run() {
     while (true) {
       
@@ -164,7 +163,7 @@ class World {
   // Attributes: 
   public float width, height; // Width and height of world, in world units (meters)
   public float radiansPerDegree = 2.0f * (float) Math.PI / 360.0f; // conversion factor
-  public float g = 4.0f; // gravity (m/s/s)
+  public float g = 4.0f; // gravity (m/s/s), ~half earth
 
   // views should probably belong to the applet, since that's the main window
   // will want a view for the stats also, which could be its own class?
@@ -232,8 +231,8 @@ class World {
     // clouds.draw(g, viewMain);
 
     // Draw stats and border
-    viewMain.drawBorder(g);
-//    ship.drawStats(g);
+//    viewMain.drawBorder(g); // flickers
+//    ship.drawStats(g); // flickers
 
     // Check for collisions
     // Must do after drawing.
@@ -413,6 +412,8 @@ class Ship
     
     world = w;
   
+//    x = world.width / 5;
+    
     flame.init(w);
     flame.ship = this;
   
@@ -511,31 +512,32 @@ class Ship
     // replace existing sprite with child sprites.
     // ie remove all line segments from this sprite. right? 
     
-    super.explode();    
+//    super.explode();    
   }  
 
   // Draw ship stats
+  //. this flickers too much - don't call it
   public void drawStats(Graphics g) {
-    //! format!
-    // ugh - what is all this - where's printf?
+    //! format
+    // what is all this - where's printf?
     // NumberFormat numberFormatter;
     // numberFormatter = NumberFormat.getNumberInstance(currentLocale);
-    // String s;
     // numberFormatter.format(amount);
-    String s = "Position: (" + x + ", " + y + ")";
-    g.drawString(s, 4, 20);
-    s = "Velocity: (" + vx + ", " + vy + ")";
-    g.drawString(s, 4, 30);
-    s = "Acceleration: (" + ax + ", " + ay + ")";
-    g.drawString(s, 4, 40);
-    s = "Rotation: (" + rotation + ")";
-    g.drawString(s, 4, 50);
-    s = "Throttle: (" + throttle + ")";
-    g.drawString(s, 4, 60);
+    String s;
+//    s = "Position (m): (" + x + ", " + y + ")";
+//    g.drawString(s, 4, 22);
+    s = "Velocity (m/s): (" + Math.floor(vx*10)/10 + ", " + Math.floor(vy*10)/10 + ")";
+    g.drawString(s, 4, 22);
+//    s = "Acceleration (m/s/s): (" + ax + ", " + ay + ")";
+//    g.drawString(s, 4, 44);
+//    s = "Rotation: (" + rotation + ")";
+//    g.drawString(s, 4, 55);
+//    s = "Throttle: (" + throttle + ")";
+//    g.drawString(s, 4, 66);
     s = "Fuel (kg): (" + massFuel + ")";
     if (massFuel < 500)
       g.setColor(Color.red);
-    g.drawString(s, 4, 70);
+    g.drawString(s, 4, 33);
     g.setColor(Color.black);
     // s = "view pos: (" + polyDraw.xpoints[0] + ", " + polyDraw.ypoints[0] + ")";
     // g.drawString(s, 4, 80);
@@ -593,7 +595,7 @@ class Flame
     
     // Set color for flames
     if (Math.random() > 0.5)
-      g.setColor(Color.yellow);
+      g.setColor(Color.yellow); //. do white or yelloworange. red is too red. redorange? 
     else
       g.setColor(Color.orange);
 
@@ -637,6 +639,9 @@ class Land extends Sprite {
       shapeModel.addLineTo(i);
     }
 
+    // Make space for a base
+    shapeModel.yPoints[29] = shapeModel.yPoints[30] = shapeModel.yPoints[31];
+    
     // Make the last point the same as the first point so it will wrap around properly
     shapeModel.yPoints[nPoints-1] = shapeModel.yPoints[0];
     
@@ -693,15 +698,16 @@ class Base extends Sprite {
     int height = (int) world.height;
     int hillHeight = height / 5; //. 20% of world height
 
-    int x = width  / 2;
-    int y = height - hillHeight;
+    int x = (int) world.land.shapeModel.xPoints[29];
     int xw = width / 20;
+    
+    int y = (int) world.land.shapeModel.yPoints[29];
     int yw = height / 40;
     
     shapeModel.addPoint(x, y);
     shapeModel.addPoint(x+xw, y);
-    shapeModel.addPoint(x+xw, y+yw);
-    shapeModel.addPoint(x, y+yw);
+    shapeModel.addPoint(x+xw, y-yw);
+    shapeModel.addPoint(x, y-yw);
     shapeModel.addLineTo(0);
     shapeModel.addLineTo(1);
     shapeModel.addLineTo(2);
@@ -796,6 +802,7 @@ class Sprite {
   float angularVelocity = 0.0f; // [radians/sec]
   float momentOfInertia; // [kg] about center of mass
   float scale = 1.0f; // [unitless] zoom factor
+  boolean present = true; // is this sprite actually here? 
   
   World world; // the world this sprite belongs to
   Transform tModelToWorld = new Transform(); // transformation from model coordinates to world coordinates
@@ -850,9 +857,6 @@ class Sprite {
     tModelToWorld.setTranslation(x, y);
 
     // Update any child sprites also
-//    Enumeration e = children.elements();
-//    while (e.hasMoreElements()) {
-//      Sprite s = (Sprite) e.nextElement();
 //    for (Sprite s : children.elements()) {
     Iterator i = children.iterator();
     while (i.hasNext()) {
@@ -898,9 +902,8 @@ class Sprite {
 
   // Make the sprite explode!
   public void explode() {
-    //, default behavior would scatter the linesegments that make up 
+    //, default behavior will scatter the linesegments that make up 
     // the sprite, add flames, etc.
-    // better to replace one sprite with several others. 
     
     Sprite s = new Sprite();
     s.init(world);
@@ -918,6 +921,7 @@ System.out.println("added child sprite");
 
     // clear the old line segments
     //shapeModel = new ShapeX();
+    this.present = false;
   }
   
   // Draw the sprite on the screen using the given view transformation
@@ -934,14 +938,9 @@ System.out.println("added child sprite");
     shapeDraw.drawShape(g);
     
     // Now draw any child sprites
-    //.. use new for syntax?
-//    Enumeration e = children.elements();
-//    while (e.hasMoreElements()) {
-//      Sprite s = (Sprite) e.nextElement();
 //    for (Sprite s : children.elements()) {
     Iterator i = children.iterator();
     while (i.hasNext()) {
-      System.out.println("draw child sprite");
       Sprite s = (Sprite) i.next();
       s.draw(g, view);
     }    

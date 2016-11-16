@@ -1,0 +1,50 @@
+<html>
+
+<head>
+  <title>JavaLander</title>
+  <style type="text/css">
+    body {
+      background-color: #302c2a;
+      color: #111;
+      margin: 2em;
+      text-align: center;
+    }
+    div.body {
+      border: 1px solid black; 
+      background-color: white;
+      color: #111;
+      padding: 2em;
+      width: 900px;
+      margin: 0 auto;
+      text-align: left;
+    }
+  </style>
+
+</head>
+
+<body>
+
+  <div class="body">
+
+    <h3>JavaLander</h3>
+    <p>
+      Click in the applet window so that it gains the focus for keypresses... <br/>
+      Then - <b>Left</b> and <b>Right</b> arrows to turn, <b>Up</b> arrow to thrust.<br/>
+      Just don't throttle too much or you'll be lost in space...<br/>
+    </p>
+
+    <!-- add codebase="classes" if .jar or .class file is in a "classes" subfolder -->
+    <applet archive="JavaLander.jar" code="JavaLander.class" width="640" height="240" border="1">
+      <param name="xextent" value="640">
+      <param name="yextent" value="240">
+      <param name="cache_option" value="no">
+    </applet>
+
+    <p>
+      <span style="font-size: 0.6em;">Version: 0.2 adding base</span><br/>
+      <!--<a href="JavaLander.java">source</a>-->
+    </p>
+
+  </div>
+</body>
+</html>
